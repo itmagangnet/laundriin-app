@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SmartLaundry Pro - Aplikasi Kasir & Pencatatan Laundry</title>
+  <meta name="description" content="Aplikasi kasir laundry modern, pencatatan transaksi kiloan dan satuan, nota WhatsApp otomatis, status antrian real-time, dan pembukuan keuangan.">
+  <meta name="theme-color" content="#0284c7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SmartLaundry">
+
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./assets/icons/icon.svg">
+  <link rel="apple-touch-icon" href="./assets/icons/icon.svg">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Stylesheets -->
+  <link rel="stylesheet" href="./css/app.css">
+  <link rel="stylesheet" href="./css/print.css" media="print">
+
+  <!-- External Libraries -->
+  <!-- Chart.js for Financial Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- HTML5-QRCode for Barcode & QR Camera Scanner -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <!-- QRCode.js for generating QR code on receipts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Canvas Confetti for Checkout Celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- SheetJS for Exporting Accounting Data to Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <!-- html2canvas for Exporting Digital Receipt to Image -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 h-full flex flex-col antialiased selection:bg-sky-500 selection:text-white">
+
+  <!-- ================= TOP APP HEADER ================= -->
+  <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-2.5 sm:px-4 py-2 sm:py-2.5 safe-top shadow-sm">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-3">
+      
+      <!-- Brand & Outlet Info -->
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 p-0.5 shadow-md shadow-sky-500/20 flex items-center justify-center shrink-0">
+          <img src="./assets/icons/icon.svg" alt="SmartLaundry" class="w-full h-full rounded-[8px] sm:rounded-[10px]">
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <h1 id="headerStoreName" class="text-xs sm:text-sm md:text-base font-extrabold tracking-tight text-slate-900 dark:text-white truncate max-w-[120px] xs:max-w-[180px] sm:max-w-xs">
+              SmartLaundry Pro
+            </h1>
+            <span class="hidden xs:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+              Online
+            </span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1 font-mono leading-tight truncate">
+            <span id="headerLiveClock">--:--:--</span> • <span class="text-sky-600 dark:text-sky-400 font-semibold">POS Laundry</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Header Action Buttons -->
+      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+        <!-- PWA Install Banner Button (Mobile) -->
+        <button type="button" id="pwaInstallBanner" onclick="App.triggerPwaInstall()" class="hidden px-2 py-1.5 sm:px-2.5 sm:py-1.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm shadow-sky-500/20 active:scale-95 flex items-center gap-1 animate-pulse-subtle">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          <span class="hidden sm:inline">Install</span>
+        </button>
+
+        <!-- Quick Scan Button (Desktop only, mobile already has scan button in bottom nav) -->
+        <button type="button" onclick="App.switchTab('scan')" class="hidden md:flex p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors" title="Scan QR Nota">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button type="button" onclick="App.toggleTheme()" class="p-1.5 sm:p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors shrink-0" title="Ubah Tema Gelap/Terang">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 block dark:hidden text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
+
+        <!-- User Role Profile & Fast Switcher Button -->
+        <button type="button" id="headerUserProfileBtn" onclick="AuthManager.openSwitchUserModal()" class="cursor-pointer active:scale-95 transition-transform shrink-0" title="Klik untuk Ganti Akun / Masukkan PIN">
+          <!-- Injected by AuthManager.updateRoleUI() -->
+        </button>
+
+        <!-- Dedicated Header Logout Button -->
+        <button type="button" id="headerLogoutBtn" onclick="AuthManager.logout()" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 transition-all active:scale-95 flex items-center gap-1 sm:gap-1.5 text-xs font-bold shadow-sm shrink-0" title="Logout / Keluar Akun">
+          <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+          <span class="hidden sm:inline">Logout</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN APP BODY ================= -->
+  <div class="flex-1 max-w-7xl w-full mx-auto flex overflow-hidden">
+
+    <!-- DESKTOP / TABLET SIDEBAR NAVIGATION -->
+    <aside class="hidden lg:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-4 shrink-0 justify-between">
+      <div id="sidebarNavMenuContainer" class="space-y-1.5">
+        <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 mb-2">Menu Utama</p>
+        
+        <button type="button" onclick="App.switchTab('reports')" data-tab="reports" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all text-slate-400">
+          <div class="nav-icon-wrap w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          </div>
+          <span>Dashboard</span>
+        </button>
+
+        <button type="button" onclick="App.switchTab('pos')" data-tab="pos" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all text-sky-600 dark:text-sky-400 font-bold">
+          <div class="nav-icon-wrap w-8 h-8 rounded-lg bg-sky-50 dark:bg-sky-950/80 flex items-center justify-center text-sky-600 dark:text-sky-400 shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+          </div>
+          <span>Kasir Transaksi</span>
+        </button>
+
+        <button type="button" onclick="App.switchTab('orders')" data-tab="orders" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all text-slate-400">
+          <div class="nav-icon-wrap w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+          </div>
+          <span>Antrian & Status</span>
+        </button>
+
+        <button type="button" onclick="App.switchTab('scan')" data-tab="scan" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all text-slate-400">
+          <div class="nav-icon-wrap w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+          </div>
+          <span>Scan Barcode / QR</span>
+        </button>
+
+        <button type="button" onclick="App.switchTab('customers')" data-tab="customers" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all text-slate-400">
+          <div class="nav-icon-wrap w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          </div>
+          <span>Pelanggan (CRM)</span>
+        </button>
+
+        <button type="button" onclick="App.switchTab('settings')" data-tab="settings" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all text-slate-400">
+          <div class="nav-icon-wrap w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          </div>
+          <span>Pengaturan Outlet</span>
+        </button>
+      </div>
+
+
+
+      <!-- Sidebar User Card & Fast Actions -->
+      <div id="sidebarUserCard" class="mt-auto mb-2">
+        <!-- Injected by AuthManager.updateRoleUI() -->
+      </div>
+
+      <!-- Quick Install Guide Card -->
+      <div class="bg-gradient-to-br from-sky-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800/80 p-3.5 rounded-2xl border border-sky-100 dark:border-slate-700 text-xs space-y-2">
+        <div class="flex items-center gap-2">
+          <span class="text-base">📱</span>
+          <p class="font-bold text-slate-800 dark:text-slate-100">Android & iOS</p>
+        </div>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400">Install aplikasi ini di HP untuk akses offline cepat tanpa internet.</p>
+        <button type="button" onclick="App.openIosInstallModal()" class="w-full py-1.5 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-xs font-bold shadow-sm transition-all text-center">
+          Cara Pasang di HP
+        </button>
+      </div>
+    </aside>
+
+    <!-- CONTENT VIEW AREA -->
+    <main class="flex-1 overflow-y-auto pb-24 lg:pb-8 p-3 sm:p-5">
+
+      <!-- ================= 1. TAB VIEW: POS KASIR ================= -->
+      <section id="view-pos" class="tab-view max-w-5xl mx-auto space-y-4">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          
+          <!-- LEFT / TOP: SERVICES & FORM (7 cols) -->
+          <div class="lg:col-span-7 space-y-4">
+
+            <!-- Customer Search & Fast Input -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm relative">
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                  <span>👤</span>
+                  <span>Data Pelanggan</span>
+                </label>
+                <button type="button" onclick="CustomersManager.openAddCustomerModal()" class="text-xs font-bold text-sky-500 hover:text-sky-600 flex items-center gap-1">
+                  <span>+ Pelanggan Baru</span>
+                </button>
+              </div>
+
+              <!-- Search Auto-complete Input -->
+              <div class="relative">
+                <input type="text" id="posCustomerSearch" oninput="POSManager.filterCustomerDropdown(this.value)" onfocus="POSManager.filterCustomerDropdown(this.value)" placeholder="Cari nama atau No. WhatsApp..." class="w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none transition-all">
+                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                
+                <!-- Autocomplete Dropdown -->
+                <div id="posCustomerDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl z-20">
+                  <!-- Injected by JS -->
+                </div>
+              </div>
+
+              <!-- Customer Detail Fields -->
+              <div class="grid grid-cols-2 gap-2 mt-2.5">
+                <input type="text" id="posCustName" placeholder="Nama Pelanggan *" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-xs">
+                <input type="tel" id="posCustPhone" placeholder="No. WA (08xxx)" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono">
+              </div>
+              <input type="text" id="posCustAddress" placeholder="Alamat (opsional untuk antar-jemput)..." class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-xs mt-2">
+            </div>
+
+            <!-- Service Selection Tabs -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              
+              <!-- Kiloan Section -->
+              <div>
+                <div class="flex items-center justify-between mb-2.5">
+                  <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                    <span>🧺</span>
+                    <span>Layanan Kiloan</span>
+                  </h3>
+                  <span class="text-[10px] text-sky-500 font-semibold font-mono">Hitung per Kg</span>
+                </div>
+                <div id="posKiloanServices" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <!-- Injected by JS -->
+                </div>
+              </div>
+
+              <!-- Satuan Section -->
+              <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <div class="flex items-center justify-between mb-2.5">
+                  <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                    <span>👔</span>
+                    <span>Layanan Satuan / Khusus</span>
+                  </h3>
+                  <span class="text-[10px] text-sky-500 font-semibold font-mono">Per Pcs / Pasang</span>
+                </div>
+                <div id="posSatuanServices" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                  <!-- Injected by JS -->
+                </div>
+              </div>
+
+              <!-- Additional Options (Parfum, Rak, Catatan) -->
+              <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Preferensi & Catatan</p>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="text-[10px] font-semibold text-slate-500 block mb-1">Aroma Parfum</label>
+                    <select id="posParfumSelect" class="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs">
+                      <!-- Injected by JS -->
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-[10px] font-semibold text-slate-500 block mb-1">Rak Simpan</label>
+                    <select id="posRackSelect" class="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono">
+                      <!-- Injected by JS -->
+                    </select>
+                  </div>
+                </div>
+                <input type="text" id="posOrderNotes" placeholder="Catatan khusus (contoh: Kaos putih jangan dicampur luntur, noda oli di celana)..." class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-xs">
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- RIGHT / BOTTOM: CART & SUMMARY (5 cols) -->
+          <div class="lg:col-span-5 space-y-4">
+            
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between min-h-[460px]">
+              
+              <div>
+                <!-- Cart Header -->
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">🛒</span>
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-white">Keranjang Kasir</h3>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span id="posCartCountBadge" class="font-mono text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400">
+                      0 Item
+                    </span>
+                    <button type="button" onclick="POSManager.resetCart()" class="text-xs text-rose-500 hover:underline">Reset</button>
+                  </div>
+                </div>
+
+                <!-- Items Container -->
+                <div class="py-3">
+                  <!-- Empty Cart State -->
+                  <div id="posCartEmptyState" class="py-12 text-center text-slate-400">
+                    <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    </div>
+                    <p class="font-semibold text-xs text-slate-500">Keranjang masih kosong</p>
+                    <p class="text-[11px] mt-0.5">Pilih layanan di samping untuk menambahkan</p>
+                  </div>
+
+                  <!-- Active Cart Items List -->
+                  <div id="posCartItemsList" class="space-y-2 max-h-72 overflow-y-auto pr-0.5">
+                    <!-- Injected by JS -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cart Totals & Checkout Button -->
+              <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <div class="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+                  <div class="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span id="posSubtotalDisplay" class="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 0</span>
+                  </div>
+                  <div class="flex justify-between items-center text-sm font-extrabold text-slate-900 dark:text-white pt-2 border-t border-dashed border-slate-200 dark:border-slate-800">
+                    <span>Total Bayar:</span>
+                    <span id="posGrandTotalDisplay" class="font-mono text-lg text-sky-600 dark:text-sky-400">Rp 0</span>
+                  </div>
+                </div>
+
+                <button type="button" onclick="POSManager.openPaymentModal()" class="w-full py-3 bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-600 hover:to-emerald-600 text-white rounded-xl font-bold text-sm shadow-md shadow-sky-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                  <span>Proses Bayar (<span id="posPayButtonTotal">Rp 0</span>)</span>
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ================= 2. TAB VIEW: ANTRIAN & STATUS ================= -->
+      <section id="view-orders" class="tab-view hidden max-w-5xl mx-auto space-y-4">
+        
+        <!-- Filter and Search Toolbar -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+          
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <!-- Search Bar -->
+            <div class="relative flex-1">
+              <input type="text" oninput="OrdersManager.setSearch(this.value)" placeholder="Cari No. Nota, Pelanggan, No. WA, atau Rak..." class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+
+            <!-- View Mode Switcher -->
+            <div class="flex items-center gap-2 shrink-0">
+              <span id="ordersCountBadge" class="font-mono text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+                0 Pesanan
+              </span>
+              <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg">
+                <button type="button" id="btnViewList" onclick="OrdersManager.toggleViewMode('list')" class="p-1.5 rounded-md text-sky-500" title="Tampilan Daftar">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <button type="button" id="btnViewKanban" onclick="OrdersManager.toggleViewMode('kanban')" class="p-1.5 rounded-md text-slate-400" title="Tampilan Papan Kanban">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter Pills -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 text-xs">
+            <button type="button" onclick="OrdersManager.setFilter('all')" data-filter="all" class="order-filter-pill px-3 py-1.5 rounded-xl font-bold bg-sky-500 text-white shadow-sm shrink-0">
+              Semua
+            </button>
+            <button type="button" onclick="OrdersManager.setFilter('active')" data-filter="active" class="order-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+              ⏳ Sedang Diproses
+            </button>
+            <button type="button" onclick="OrdersManager.setFilter('ready')" data-filter="ready" class="order-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+              📦 Siap Diambil
+            </button>
+            <button type="button" onclick="OrdersManager.setFilter('unpaid')" data-filter="unpaid" class="order-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+              ⚠️ Belum Lunas
+            </button>
+            <button type="button" onclick="OrdersManager.setFilter('today')" data-filter="today" class="order-filter-pill px-3 py-1.5 rounded-xl font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+              📅 Hari Ini
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Orders Content (List or Kanban) -->
+        <div id="ordersListContainer">
+          <!-- Injected by JS -->
+        </div>
+
+      </section>
+
+      <!-- ================= 3. TAB VIEW: SCAN QR / BARCODE ================= -->
+      <section id="view-scan" class="tab-view hidden max-w-lg mx-auto space-y-4">
+        
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm text-center space-y-4">
+          
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Scan Barcode / QR Nota</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Arahkan kamera ke kode QR pada struk laundry</p>
+          </div>
+
+          <!-- Camera Scanner Viewport -->
+          <div class="relative w-full aspect-square max-w-xs mx-auto rounded-2xl overflow-hidden bg-slate-950 flex items-center justify-center border-2 border-dashed border-sky-500/50">
+            
+            <div id="qrReaderContainer" class="w-full h-full"></div>
+
+            <!-- Placeholder before camera starts -->
+            <div id="scannerCameraPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-4 space-y-3 bg-slate-900">
+              <div class="w-16 h-16 rounded-2xl bg-sky-500/10 flex items-center justify-center text-sky-400">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              </div>
+              <p class="text-xs font-semibold">Kamera Belum Aktif</p>
+              <button type="button" id="scannerStartBtn" onclick="ScannerManager.startScanner()" class="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-500/25 active:scale-95 transition-all">
+                Aktifkan Kamera Live
+              </button>
+            </div>
+
+            <button type="button" id="scannerStopBtn" onclick="ScannerManager.stopScanner()" class="hidden absolute top-2 right-2 px-2.5 py-1 bg-rose-600 text-white rounded-lg text-xs font-bold shadow-md z-10">
+              Stop
+            </button>
+          </div>
+
+          <!-- Manual Input Fallback -->
+          <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+            <label class="text-xs font-semibold text-slate-500">Atau Masukkan Nomor Nota:</label>
+            <div class="flex gap-2">
+              <input type="text" id="scannerManualInput" placeholder="Contoh: LND-20260915-001" class="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono uppercase">
+              <button type="button" onclick="ScannerManager.handleManualSearch()" class="px-4 py-2 bg-sky-500 text-white rounded-xl text-xs font-bold">
+                Cari
+              </button>
+            </div>
+          </div>
+
+          <!-- Result Container -->
+          <div id="scannerResultContainer" class="pt-2">
+            <!-- Injected by JS -->
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ================= 4. TAB VIEW: PELANGGAN (CRM) ================= -->
+      <section id="view-customers" class="tab-view hidden max-w-5xl mx-auto space-y-4">
+        
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          
+          <div class="relative flex-1">
+            <input type="text" oninput="CustomersManager.setSearch(this.value)" placeholder="Cari nama, nomor WhatsApp, atau alamat..." class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span id="customersCountBadge" class="font-mono text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+              0 Orang
+            </span>
+            <button type="button" onclick="CustomersManager.openAddCustomerModal()" class="px-3 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm shadow-sky-500/20 flex items-center gap-1.5 shrink-0">
+              <span>+ Tambah Pelanggan</span>
+            </button>
+          </div>
+
+        </div>
+
+        <div id="customersListContainer">
+          <!-- Injected by JS -->
+        </div>
+
+      </section>
+
+      <!-- ================= 5. TAB VIEW: LAPORAN KEUANGAN ================= -->
+      <section id="view-reports" class="tab-view hidden max-w-5xl mx-auto space-y-4">
+        
+        <!-- Period Bar -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          
+          <div class="flex items-center gap-1.5 text-xs">
+            <button type="button" onclick="ReportsManager.setPeriod('today')" data-period="today" class="report-period-btn px-3 py-1.5 rounded-xl font-bold bg-sky-500 text-white shadow-sm">
+              Hari Ini
+            </button>
+            <button type="button" onclick="ReportsManager.setPeriod('week')" data-period="week" class="report-period-btn px-3 py-1.5 rounded-xl font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+              7 Hari
+            </button>
+            <button type="button" onclick="ReportsManager.setPeriod('month')" data-period="month" class="report-period-btn px-3 py-1.5 rounded-xl font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+              Bulan Ini
+            </button>
+            <button type="button" onclick="ReportsManager.setPeriod('year')" data-period="year" class="report-period-btn px-3 py-1.5 rounded-xl font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+              Tahun Ini
+            </button>
+            <button type="button" onclick="ReportsManager.setPeriod('all')" data-period="all" class="report-period-btn px-3 py-1.5 rounded-xl font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+              Semua
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="ReportsManager.openAddExpenseModal()" class="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-1">
+              <span>+ Catat Pengeluaran</span>
+            </button>
+            <button type="button" onclick="ReportsManager.exportToExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              <span>Export Excel</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <p class="text-xs font-bold text-slate-400">Total Omset (Pemasukan)</p>
+            <p id="reportTotalRevenue" class="font-mono font-extrabold text-xl text-sky-600 dark:text-sky-400 mt-1">Rp 0</p>
+            <p class="text-[10px] text-slate-400 mt-1" id="reportTotalOrdersCount">0 Nota</p>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <p class="text-xs font-bold text-slate-400">Total Pengeluaran Kas</p>
+            <p id="reportTotalExpense" class="font-mono font-extrabold text-xl text-rose-500 mt-1">Rp 0</p>
+            <p class="text-[10px] text-slate-400 mt-1">Biaya operasional</p>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <p class="text-xs font-bold text-slate-400">Laba Bersih (Net Profit)</p>
+            <p id="reportNetProfit" class="font-mono font-extrabold text-xl text-emerald-600 dark:text-emerald-400 mt-1">Rp 0</p>
+            <p class="text-[10px] text-slate-400 mt-1">Omset - Pengeluaran</p>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <p class="text-xs font-bold text-slate-400">Total Timbangan</p>
+            <p id="reportTotalKg" class="font-mono font-extrabold text-xl text-indigo-600 dark:text-indigo-400 mt-1">0 kg</p>
+            <p class="text-[10px] text-amber-500 font-semibold mt-1">Piutang: <span id="reportTotalUnpaid">Rp 0</span></p>
+          </div>
+
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+          
+          <div class="md:col-span-8 bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-3">
+              Grafik Omset vs Pengeluaran (7 Hari Terakhir)
+            </h4>
+            <div class="h-60">
+              <canvas id="revenueTrendChart"></canvas>
+            </div>
+          </div>
+
+          <div class="md:col-span-4 bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-3">
+              Layanan Terpopuler
+            </h4>
+            <div class="h-60">
+              <canvas id="serviceBreakdownChart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Income / Orders Transaction List Card -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <span>📋 Catatan Transaksi Masuk (Pemasukan)</span>
+              </h4>
+              <p class="text-[11px] text-slate-400 mt-0.5" id="reportOrdersSubHeader">Rincian nota transaksi pada periode ini</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="reportOrdersSummaryBadge" class="bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 text-xs font-bold px-2.5 py-1 rounded-xl border border-sky-200 dark:border-sky-900/60">
+                0 Nota
+              </span>
+            </div>
+          </div>
+          <div id="reportOrdersList" class="py-1">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <!-- Expenses List Card -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <span>💸 Catatan Pengeluaran Kas (Beban Biaya)</span>
+              </h4>
+              <p class="text-[11px] text-slate-400 mt-0.5" id="reportExpensesSubHeader">Beban operasional, belanja bahan & utilitas</p>
+            </div>
+            <button type="button" onclick="ReportsManager.openAddExpenseModal()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60 rounded-xl text-xs font-bold active:scale-95 transition-all flex items-center gap-1">
+              <span>+ Tambah Pengeluaran</span>
+            </button>
+          </div>
+          <div id="reportExpensesList" class="py-1">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= 6. TAB VIEW: PENGATURAN ================= -->
+      <section id="view-settings" class="tab-view hidden max-w-4xl mx-auto space-y-4">
+        
+        <!-- Outlet Profile -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Profil Outlet Laundry</h3>
+              <p class="text-xs text-slate-400">Informasi ini akan dicetak pada nota & pesan WhatsApp pelanggan</p>
+            </div>
+            <button type="button" onclick="SettingsManager.saveStoreSettings()" class="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm">
+              Simpan Perubahan
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-semibold text-slate-500 block mb-1">Nama Laundry</label>
+              <input type="text" id="settingsStoreName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold">
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 block mb-1">Slogan / Tagline</label>
+              <input type="text" id="settingsTagline" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 block mb-1">No. WhatsApp Outlet</label>
+              <input type="tel" id="settingsPhone" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono">
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 block mb-1">Ukuran Kertas Struk Thermal</label>
+              <select id="settingsPrinterSize" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+                <option value="58mm">58mm (Roll Kecil Portable)</option>
+                <option value="80mm">80mm (Roll Standar Kasir)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-500 block mb-1">Alamat Outlet</label>
+            <input type="text" id="settingsAddress" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-500 block mb-1">Catatan Kaki Struk (Syarat & Ketentuan)</label>
+            <textarea id="settingsFooterNote" rows="2" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"></textarea>
+          </div>
+        </div>
+
+        <!-- Users & Roles Manager -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>👥</span>
+                <span>Manajemen Pengguna (Kasir & Admin)</span>
+              </h3>
+              <p class="text-xs text-slate-400">Kelola akun kasir staff, admin owner, dan keamanan PIN akses</p>
+            </div>
+            <button type="button" onclick="SettingsManager.openAddUserModal()" class="px-3.5 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-1">
+              <span>+ Tambah Kasir</span>
+            </button>
+          </div>
+          <div id="settingsUsersList">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <!-- Services & Prices Manager -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Daftar Layanan & Tarif Harga</h3>
+              <p class="text-xs text-slate-400">Kelola harga kiloan dan satuan</p>
+            </div>
+            <button type="button" onclick="SettingsManager.openAddServiceModal()" class="px-3 py-1.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm">
+              + Tambah Layanan
+            </button>
+          </div>
+          <div id="settingsServicesList">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <!-- Fragrance List Manager -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Pilihan Aroma Parfum</h3>
+          <div class="flex gap-2">
+            <input type="text" id="newFragranceInput" placeholder="Tambah nama parfum baru..." class="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+            <button type="button" onclick="SettingsManager.addFragrance()" class="px-3 py-2 bg-sky-500 text-white rounded-xl text-xs font-bold">
+              Tambah
+            </button>
+          </div>
+          <div id="settingsFragrancesList" class="pt-2">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <!-- Racks List Manager -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Daftar Rak Penyimpanan</h3>
+          <div class="flex gap-2">
+            <input type="text" id="newRackInput" placeholder="Contoh: Rak D-01 atau Rak Sepatu..." class="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+            <button type="button" onclick="SettingsManager.addRack()" class="px-3 py-2 bg-sky-500 text-white rounded-xl text-xs font-bold">
+              Tambah
+            </button>
+          </div>
+          <div id="settingsRacksList" class="pt-2">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <!-- Database Backup & Restore -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Cadangan & Pemulihan Data (Backup/Restore)</h3>
+            <p class="text-xs text-slate-400">Data tersimpan aman di browser perangkat Anda. Simpan backup berkala.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3 pt-2">
+            <button type="button" onclick="SettingsManager.downloadBackup()" class="px-4 py-2 bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              <span>Unduh Backup (JSON)</span>
+            </button>
+            <button type="button" onclick="SettingsManager.triggerRestoreFileInput()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+              <span>Pulihkan Data (Restore)</span>
+            </button>
+            <input type="file" id="restoreFileInput" onchange="SettingsManager.handleRestoreFile(event)" accept=".json" class="hidden">
+            <button type="button" onclick="SettingsManager.resetDemoData()" class="px-4 py-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl text-xs font-bold ml-auto">
+              Reset Data Demo
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- ================= MOBILE BOTTOM NAVIGATION BAR ================= -->
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-30 glass-nav safe-bottom">
+    <div id="mobileBottomNavContainer" class="grid grid-cols-5 h-16 max-w-lg mx-auto">
+      
+      <button type="button" onclick="App.switchTab('pos')" data-tab="pos" class="nav-btn flex flex-col items-center justify-center text-sky-600 dark:text-sky-400 font-bold transition-all">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+        <span class="text-[10px]">Kasir</span>
+      </button>
+
+      <button type="button" onclick="App.switchTab('orders')" data-tab="orders" class="nav-btn flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 transition-all">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+        <span class="text-[10px]">Antrian</span>
+      </button>
+
+      <button type="button" onclick="App.switchTab('scan')" data-tab="scan" class="nav-btn flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 transition-all">
+        <div class="w-10 h-10 -mt-5 rounded-full bg-gradient-to-tr from-sky-500 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-sky-500/30">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+        </div>
+        <span class="text-[10px] mt-0.5">Scan</span>
+      </button>
+
+      <button type="button" onclick="App.switchTab('reports')" data-tab="reports" class="nav-btn flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 transition-all">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <span class="text-[10px]">Laporan</span>
+      </button>
+
+      <button type="button" onclick="App.switchTab('settings')" data-tab="settings" class="nav-btn flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 transition-all">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        <span class="text-[10px]">Outlet</span>
+      </button>
+
+    </div>
+  </nav>
+
+  <!-- ================= UNIVERSAL MODALS ================= -->
+
+  <!-- 1. KILOAN WEIGHING MODAL -->
+  <div id="kiloanWeightModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in">
+      <div class="text-center">
+        <h3 id="kiloanModalTitle" class="text-base font-extrabold text-slate-900 dark:text-white">Timbang Cucian</h3>
+        <p id="kiloanModalPrice" class="text-xs text-sky-600 dark:text-sky-400 font-bold font-mono mt-0.5">Rp 7.000 / kg</p>
+      </div>
+
+      <!-- Weight Display & Stepper -->
+      <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-center space-y-3">
+        <div class="flex items-center justify-center gap-3">
+          <button type="button" onclick="POSManager.addKiloanWeight(-0.5)" class="w-11 h-11 rounded-xl bg-white dark:bg-slate-700 shadow border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-white text-lg font-bold active:scale-90 transition-all">-</button>
+          
+          <div class="flex items-baseline justify-center">
+            <input type="number" step="0.1" min="0.1" id="kiloanWeightInput" oninput="POSManager.setKiloanWeight(this.value)" class="w-24 text-center text-3xl font-extrabold font-mono bg-transparent text-slate-900 dark:text-white focus:outline-none">
+            <span class="text-base font-bold text-slate-400">kg</span>
+          </div>
+
+          <button type="button" onclick="POSManager.addKiloanWeight(0.5)" class="w-11 h-11 rounded-xl bg-white dark:bg-slate-700 shadow border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-white text-lg font-bold active:scale-90 transition-all">+</button>
+        </div>
+
+        <!-- Quick Weight Step Buttons -->
+        <div class="grid grid-cols-4 gap-1.5 pt-2">
+          <button type="button" onclick="POSManager.addKiloanWeight(0.5)" class="btn-quick-kg py-1.5 bg-white dark:bg-slate-700 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600">+0.5</button>
+          <button type="button" onclick="POSManager.addKiloanWeight(1.0)" class="btn-quick-kg py-1.5 bg-white dark:bg-slate-700 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600">+1.0</button>
+          <button type="button" onclick="POSManager.addKiloanWeight(2.0)" class="btn-quick-kg py-1.5 bg-white dark:bg-slate-700 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600">+2.0</button>
+          <button type="button" onclick="POSManager.addKiloanWeight(5.0)" class="btn-quick-kg py-1.5 bg-white dark:bg-slate-700 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600">+5.0</button>
+        </div>
+      </div>
+
+      <!-- Subtotal Live -->
+      <div class="flex items-center justify-between px-1 text-xs">
+        <span class="text-slate-500">Subtotal:</span>
+        <span id="kiloanModalSubtotal" class="font-mono font-extrabold text-base text-sky-600 dark:text-sky-400">Rp 0</span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button type="button" onclick="POSManager.closeKiloanModal()" class="py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
+          Batal
+        </button>
+        <button type="button" onclick="POSManager.confirmKiloanWeight()" class="py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-500/25 active:scale-95 transition-all">
+          Masuk Keranjang
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. PAYMENT CHECKOUT MODAL -->
+  <div id="paymentModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Pembayaran Kasir</h3>
+        <button type="button" onclick="POSManager.closePaymentModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+
+      <!-- Total Tagihan Display -->
+      <div class="bg-gradient-to-br from-sky-500 to-indigo-600 p-4 rounded-2xl text-white text-center shadow-lg shadow-sky-500/20">
+        <p class="text-xs text-sky-100 uppercase tracking-wider font-semibold">Total Tagihan Laundry</p>
+        <p id="payModalGrandTotal" class="font-mono font-extrabold text-2xl mt-1">Rp 0</p>
+      </div>
+
+      <!-- Payment Method Selector -->
+      <div>
+        <label class="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-2">Metode Pembayaran</label>
+        <div class="grid grid-cols-4 gap-2">
+          <button type="button" onclick="POSManager.selectPaymentMethod('Tunai')" data-method="Tunai" class="btn-pay-method p-2 rounded-xl border border-sky-500 bg-sky-50 dark:bg-sky-950/60 text-sky-600 font-bold text-xs flex flex-col items-center gap-1 transition-all">
+            <span>💵</span>
+            <span>Tunai</span>
+          </button>
+          <button type="button" onclick="POSManager.selectPaymentMethod('QRIS')" data-method="QRIS" class="btn-pay-method p-2 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs flex flex-col items-center gap-1 transition-all">
+            <span>📱</span>
+            <span>QRIS</span>
+          </button>
+          <button type="button" onclick="POSManager.selectPaymentMethod('Transfer')" data-method="Transfer" class="btn-pay-method p-2 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs flex flex-col items-center gap-1 transition-all">
+            <span>🏦</span>
+            <span>Transfer</span>
+          </button>
+          <button type="button" onclick="POSManager.selectPaymentMethod('Belum Lunas')" data-method="Belum Lunas" class="btn-pay-method p-2 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs flex flex-col items-center gap-1 transition-all">
+            <span>⏳</span>
+            <span>Nanti</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Method Details: Tunai Cash -->
+      <div id="payCashSection" class="space-y-2">
+        <label class="text-xs font-semibold text-slate-500">Uang Diterima (Rp)</label>
+        <input type="number" id="payCashInput" oninput="POSManager.updatePaymentCalculations()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-bold font-mono">
+        
+        <!-- Quick Cash Buttons -->
+        <div class="grid grid-cols-4 gap-1.5 pt-1">
+          <button type="button" onclick="POSManager.setQuickCash('PAS')" class="py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-bold">Uang Pas</button>
+          <button type="button" onclick="POSManager.setQuickCash(20000)" class="py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-bold font-mono">20k</button>
+          <button type="button" onclick="POSManager.setQuickCash(50000)" class="py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-bold font-mono">50k</button>
+          <button type="button" onclick="POSManager.setQuickCash(100000)" class="py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-bold font-mono">100k</button>
+        </div>
+
+        <div class="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-900 mt-2">
+          <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300">Kembalian:</span>
+          <span id="payChangeAmount" class="font-mono font-extrabold text-base text-emerald-600 dark:text-emerald-400">Rp 0</span>
+        </div>
+      </div>
+
+      <!-- Method Details: QRIS -->
+      <div id="payQrisSection" class="hidden text-center p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+        <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Scan QRIS Dinamis Laundry</p>
+        <div id="payQrisQrCanvas" class="flex justify-center my-2"></div>
+        <p class="text-[10px] text-slate-400">Dapat di-scan dengan BCA, GoPay, OVO, Dana, ShopeePay, dll.</p>
+      </div>
+
+      <!-- Method Details: Transfer -->
+      <div id="payTransferSection" class="hidden p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs space-y-1">
+        <p class="font-bold text-slate-800 dark:text-slate-200">Rekening Transfer Toko:</p>
+        <p class="font-mono text-slate-600 dark:text-slate-300">BCA: 8830-1234-56 (A.N FreshLaundry)</p>
+        <p class="font-mono text-slate-600 dark:text-slate-300">Mandiri: 137-00-9876-543</p>
+      </div>
+
+      <!-- Sisa / DP Warning if partial or unpaid -->
+      <div id="paySisaContainer" class="hidden p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-900 text-xs flex justify-between items-center text-amber-800 dark:text-amber-300 font-bold">
+        <span>Sisa Tagihan (Utang):</span>
+        <span id="paySisaAmount" class="font-mono">Rp 0</span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button type="button" onclick="POSManager.closePaymentModal()" class="py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
+          Batal
+        </button>
+        <button type="button" onclick="POSManager.submitOrder()" class="py-3 bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-600 hover:to-emerald-600 text-white rounded-xl text-xs font-extrabold shadow-md shadow-sky-500/25 active:scale-95 transition-all">
+          Selesaikan & Cetak Nota
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 3. DIGITAL RECEIPT MODAL -->
+  <div id="receiptModal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-100 dark:bg-slate-950 rounded-3xl p-5 max-w-md w-full border border-slate-300 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in max-h-[92vh] flex flex-col justify-between">
+      
+      <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+          <span>🧾</span>
+          <span>Nota Transaksi Digital</span>
+        </h3>
+        <button type="button" onclick="POSManager.closeReceiptModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+
+      <!-- Printable Card Viewport -->
+      <div id="receiptModalContent" class="overflow-y-auto max-h-[62vh] pr-1">
+        <!-- Injected by JS -->
+      </div>
+
+      <!-- Receipt Actions (WhatsApp, Print, Image) -->
+      <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+        <button type="button" id="receiptSendWaBtn" class="py-2.5 px-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-sm shadow-emerald-500/20 active:scale-95 transition-all">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+          <span>Kirim WA</span>
+        </button>
+
+        <button type="button" id="receiptPrintBtn" class="py-2.5 px-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-sm shadow-sky-500/20 active:scale-95 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+          <span>Cetak Thermal</span>
+        </button>
+
+        <button type="button" id="receiptDownloadImageBtn" class="py-2.5 px-2 bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 active:scale-95 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          <span>Simpan PNG</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 4. ADD/EDIT CUSTOMER MODAL -->
+  <div id="customerFormModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in">
+      <h3 id="customerFormModalTitle" class="text-base font-extrabold text-slate-900 dark:text-white">Tambah Pelanggan</h3>
+      <form id="customerForm" onsubmit="event.preventDefault(); CustomersManager.saveCustomerForm();" class="space-y-3">
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">Nama Lengkap *</label>
+          <input type="text" id="custFormName" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">No. WhatsApp / HP</label>
+          <input type="tel" id="custFormPhone" placeholder="08xxxxxxxxxx" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">Alamat Lengkap</label>
+          <input type="text" id="custFormAddress" placeholder="Jl. ... / No. Rumah" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">Catatan Tambahan</label>
+          <input type="text" id="custFormNotes" placeholder="Catatan kebiasaan / request" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button type="button" onclick="CustomersManager.closeCustomerModal()" class="py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">Batal</button>
+          <button type="submit" class="py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. ADD/EDIT SERVICE MODAL -->
+  <div id="serviceFormModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in">
+      <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Layanan Laundry</h3>
+      <form id="serviceForm" onsubmit="event.preventDefault(); SettingsManager.saveServiceForm();" class="space-y-3">
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">Nama Layanan *</label>
+          <input type="text" id="srvFormName" required placeholder="Contoh: Cuci Kering Setrika" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs font-semibold text-slate-500 block mb-1">Tipe</label>
+            <select id="srvFormType" class="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+              <option value="kiloan">Kiloan</option>
+              <option value="satuan">Satuan</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500 block mb-1">Satuan</label>
+            <input type="text" id="srvFormUnit" placeholder="kg / pcs / pasang" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs font-semibold text-slate-500 block mb-1">Tarif Harga (Rp) *</label>
+            <input type="number" id="srvFormPrice" required min="0" placeholder="7000" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500 block mb-1">Durasi (Jam)</label>
+            <input type="number" id="srvFormDuration" min="1" value="24" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">Deskripsi Singkat</label>
+          <input type="text" id="srvFormDesc" placeholder="Keterangan proses layanan" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button type="button" onclick="SettingsManager.closeServiceModal()" class="py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">Batal</button>
+          <button type="submit" class="py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. ADD EXPENSE MODAL -->
+  <div id="expenseFormModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in">
+      <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Catat Pengeluaran Kas</h3>
+      <form id="expenseForm" onsubmit="event.preventDefault(); ReportsManager.saveExpenseForm();" class="space-y-3">
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">Nama Pengeluaran *</label>
+          <input type="text" id="expTitleInput" required placeholder="Contoh: Beli Plastik Jinjing 5 Pack" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs font-semibold text-slate-500 block mb-1">Nominal (Rp) *</label>
+            <input type="number" id="expAmountInput" required min="1" placeholder="50000" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500 block mb-1">Kategori</label>
+            <select id="expCategorySelect" class="w-full px-2 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+              <option value="Bahan Baku">Bahan Baku (Deterjen/Parfum)</option>
+              <option value="Operasional">Operasional (Plastik/Hanger)</option>
+              <option value="Utilitas">Utilitas (Listrik/Air/Gas)</option>
+              <option value="Gaji">Gaji Karyawan</option>
+              <option value="Sewa & Maintenance">Sewa & Maintenance Mesin</option>
+              <option value="Lain-lain">Lain-lain</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">Catatan / Keterangan</label>
+          <input type="text" id="expNotesInput" placeholder="Keterangan toko / nota belanja" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button type="button" onclick="ReportsManager.closeExpenseModal()" class="py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">Batal</button>
+          <button type="submit" class="py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold shadow-sm">Simpan Pengeluaran</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 7. SETTLE PAYMENT MODAL -->
+  <div id="settlePaymentModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in">
+      <h3 id="settleModalTitle" class="text-sm font-extrabold text-slate-900 dark:text-white">Pelunasan Tagihan</h3>
+      
+      <div class="bg-amber-50 dark:bg-amber-950/50 p-3 rounded-2xl border border-amber-200 dark:border-amber-900 text-center">
+        <p class="text-xs text-amber-700 dark:text-amber-400">Total Sisa Tagihan</p>
+        <p id="settleModalSisa" class="font-mono font-extrabold text-xl text-amber-600 mt-0.5">Rp 0</p>
+      </div>
+
+      <div class="space-y-2">
+        <label class="text-xs font-semibold text-slate-500">Metode Pembayaran</label>
+        <select id="settlePaymentMethodSelect" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold">
+          <option value="Tunai">💵 Tunai (Cash)</option>
+          <option value="QRIS">📱 QRIS</option>
+          <option value="Transfer">🏦 Transfer Bank</option>
+        </select>
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs font-semibold text-slate-500">Nominal Pelunasan (Rp)</label>
+        <input type="number" id="settleCashInput" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button type="button" onclick="OrdersManager.closeSettlePaymentModal()" class="py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">Batal</button>
+        <button type="button" onclick="OrdersManager.submitSettlePayment()" class="py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-sm">Lunaskan Sekarang</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. STATUS TIMELINE MODAL -->
+  <div id="statusHistoryModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in">
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+        <h3 id="statusHistoryTitle" class="text-xs font-extrabold text-slate-900 dark:text-white">Riwayat Status</h3>
+        <button type="button" onclick="OrdersManager.closeStatusHistoryModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      <div id="statusHistoryList" class="py-2">
+        <!-- Injected by JS -->
+      </div>
+      <button type="button" onclick="OrdersManager.closeStatusHistoryModal()" class="w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">Tutup</button>
+    </div>
+  </div>
+
+  <!-- 9. CUSTOMER HISTORY MODAL -->
+  <div id="customerHistoryModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in max-h-[85vh] flex flex-col justify-between">
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+        <h3 id="customerHistoryTitle" class="text-sm font-extrabold text-slate-900 dark:text-white">Riwayat Cucian</h3>
+        <button type="button" onclick="CustomersManager.closeCustomerHistoryModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      <div id="customerHistoryOrdersList" class="overflow-y-auto space-y-2 py-2 flex-1">
+        <!-- Injected by JS -->
+      </div>
+      <button type="button" onclick="CustomersManager.closeCustomerHistoryModal()" class="w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">Tutup</button>
+    </div>
+  </div>
+
+  <!-- 10. IOS / ANDROID INSTALL GUIDE MODAL -->
+  <div id="iosInstallGuideModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in text-center">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 p-2 shadow-lg shadow-sky-500/30 flex items-center justify-center">
+        <img src="./assets/icons/icon.svg" alt="App Icon" class="w-full h-full">
+      </div>
+      <div>
+        <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Pasang di HP Android & iPhone</h3>
+        <p class="text-xs text-slate-400 mt-1">Gunakan aplikasi layaknya aplikasi native langsung dari Home Screen.</p>
+      </div>
+
+      <div class="space-y-2.5 text-left text-xs bg-slate-50 dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+        <div class="flex items-start gap-2">
+          <span class="font-bold text-sky-500">🍏 iOS:</span>
+          <span>Buka di <b>Safari</b> ➔ Tekan tombol <b>Bagikan (Share)</b> ➔ Pilih <b>"Tambah ke Layar Utama" (Add to Home Screen)</b>.</span>
+        </div>
+        <div class="flex items-start gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+          <span class="font-bold text-emerald-500">🤖 Android:</span>
+          <span>Buka di <b>Chrome</b> ➔ Tekan titik tiga ⋮ ➔ Pilih <b>"Install Aplikasi"</b> atau <b>"Tambahkan ke Layar Utama"</b>.</span>
+        </div>
+      </div>
+
+      <button type="button" onclick="App.closeIosInstallModal()" class="w-full py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm">
+        Saya Mengerti
+      </button>
+    </div>
+  </div>
+
+  <!-- 11. STANDARD CLEAN LOGIN PORTAL (KASIR & ADMIN) -->
+  <div id="switchUserModal" style="display: none;" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in max-h-[96vh] overflow-y-auto">
+      
+      <!-- Brand & Header -->
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-3">
+          <div id="loginStoreIconWrap" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 p-0.5 shadow-md shadow-sky-500/20 flex items-center justify-center shrink-0">
+            <img id="loginStoreIcon" src="./assets/icons/icon.svg" alt="SmartLaundry" class="w-full h-full rounded-[10px]">
+          </div>
+          <div>
+            <h3 id="loginModalTitle" class="text-sm font-extrabold text-slate-900 dark:text-white">Portal Login SmartLaundry</h3>
+            <p id="loginModalSubtitle" class="text-[11px] text-slate-400">Masuk sebagai Kasir atau Administrator</p>
+          </div>
+        </div>
+        <button type="button" id="loginCloseXBtn" onclick="AuthManager.closeSwitchUserModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+
+      <!-- Standard Login Form -->
+      <form id="standardLoginForm" onsubmit="event.preventDefault(); AuthManager.submitStandardLogin();" class="space-y-4">
+        
+        <!-- Username Input (Manual Input) -->
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+            Username / Akun
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            </div>
+            <input type="text" id="loginUsernameInput" placeholder="Masukkan Username (cth: admin / kasir)" required class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-all">
+          </div>
+        </div>
+
+        <!-- Password / PIN Input -->
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+            Password / PIN Akses
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <input type="password" id="loginPinInput" placeholder="Masukkan PIN Akses" required autocomplete="current-password" class="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-all">
+            <button type="button" onclick="AuthManager.togglePinVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+              <svg id="pinEyeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="pt-1 space-y-2">
+          <button type="submit" id="loginSubmitBtn" class="w-full py-3 bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-600 hover:to-emerald-600 text-white rounded-xl text-xs font-extrabold shadow-lg shadow-sky-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+            <span>Masuk Sekarang</span>
+          </button>
+          
+          <button type="button" id="loginCancelBtn" onclick="AuthManager.closeSwitchUserModal()" class="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-all">
+            Batal
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- 12. ADMIN PIN OVERRIDE VERIFICATION MODAL -->
+  <div id="adminPinModal" style="display: none;" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in text-center">
+      <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-600 flex items-center justify-center text-2xl shadow-sm">
+        🔒
+      </div>
+      <div>
+        <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Otorisasi Administrator</h3>
+        <p id="adminPinModalReason" class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Aksi ini memerlukan otorisasi PIN Admin (Owner).
+        </p>
+      </div>
+
+      <div class="space-y-1">
+        <input type="password" id="adminPinModalInput" maxlength="8" placeholder="Masukkan PIN Admin" onkeydown="if(event.key === 'Enter') AuthManager.submitAdminPinOverride()" class="w-full text-center text-2xl font-mono font-extrabold tracking-widest py-2.5 px-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl focus:border-amber-500 focus:outline-none transition-all">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button type="button" onclick="AuthManager.closeAdminPinModal()" class="py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
+          Batal
+        </button>
+        <button type="button" onclick="AuthManager.submitAdminPinOverride()" class="py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-extrabold shadow-sm active:scale-95 transition-all">
+          Buka Akses
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13. USER FORM MODAL (ADD / EDIT CASHIER OR ADMIN) -->
+  <div id="userFormModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-fade-in">
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+        <h3 id="userFormModalTitle" class="text-sm font-extrabold text-slate-900 dark:text-white">Kelola Pengguna</h3>
+        <button type="button" onclick="SettingsManager.closeUserModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+
+      <form id="userForm" onsubmit="event.preventDefault(); SettingsManager.saveUserForm();" class="space-y-3">
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">Nama Lengkap Staff *</label>
+          <input type="text" id="userFormName" placeholder="Contoh: Kasir Budi / Owner" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold">
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">Username Login *</label>
+          <input type="text" id="userFormUsername" placeholder="Contoh: kasir2" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs font-semibold text-slate-500 block mb-1">Peran (Role) *</label>
+            <select id="userFormRole" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold">
+              <option value="kasir">💼 Kasir (Staff)</option>
+              <option value="admin">👑 Admin (Owner)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-500 block mb-1">PIN Akses (4 Digit) *</label>
+            <input type="password" id="userFormPin" maxlength="8" placeholder="1234" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-center">
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-slate-500 block mb-1">Pilih Avatar Ikon</label>
+          <select id="userFormAvatar" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+            <option value="💼">💼 Kasir Tas Kerja</option>
+            <option value="👑">👑 Mahkota Owner / Admin</option>
+            <option value="🧑">🧑 Staff Pria</option>
+            <option value="👩">👩 Staff Wanita</option>
+            <option value="👔">👔 Kasir Kemeja</option>
+            <option value="🧺">🧺 Laundry Master</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button type="button" onclick="SettingsManager.closeUserModal()" class="py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold">
+            Batal
+          </button>
+          <button type="submit" class="py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm">
+            Simpan Akun
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Hidden Printable Thermal Receipt Container -->
+  <div id="printArea" class="hidden"></div>
+
+  <!-- Floating Toast Notifications Container -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2 max-w-xs pointer-events-none"></div>
+
+  <!-- App Core JavaScript Modules -->
+  <script src="./js/db.js"></script>
+  <script src="./js/auth.js"></script>
+  <script src="./js/receipt.js"></script>
+  <script src="./js/pos.js"></script>
+  <script src="./js/orders.js"></script>
+  <script src="./js/customers.js"></script>
+  <script src="./js/reports.js"></script>
+  <script src="./js/scanner.js"></script>
+  <script src="./js/settings.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{
+  "name": "SmartLaundry Pro - Aplikasi Kasir & Pencatatan Laundry",
+  "short_name": "SmartLaundry",
+  "description": "Aplikasi manajemen operasional laundry, POS kasir, nota WhatsApp otomatis, status pelacakan, dan pembukuan keuangan.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0284c7",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Transaksi Baru (Kasir)",
+      "url": "./index.html#pos",
+      "description": "Buka kasir untuk input cucian baru"
+    },
+    {
+      "name": "Antrian Cucian",
+      "url": "./index.html#orders",
+      "description": "Lihat status antrian dan proses laundry"
+    },
+    {
+      "name": "Scan QR Nota",
+      "url": "./index.html#scan",
+      "description": "Scan barcode atau QR nota pelanggan"
+    },
+    {
+      "name": "Dashboard",
+      "url": "./index.html#reports",
+      "description": "Lihat omset dan keuntungan hari ini"
+    }
+  ]
+}
